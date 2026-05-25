@@ -9,10 +9,6 @@ local KeyDatabaseURL = "https://raw.githack.com/poohnok/KEY/main/key.txt"
 local ValidKeys = {"frank@13579", "qwer123", "asdf456"}
 local AuthFileName = "ScriptKey_Auth.txt"
 
-if isfile and isfile(AuthFileName) then
-    pcall(function() delfile(AuthFileName) end)
-end
-
 local function RefreshKeys()
     local cacheBuster = KeyDatabaseURL .. "?t=" .. tostring(os.time())
     local success, result = pcall(function()
@@ -33,13 +29,23 @@ local function SaveAuth()
     if writefile then pcall(function() writefile(AuthFileName, "Authorized") end) end
 end
 
+local function CheckAuth()
+    if isfile and isfile(AuthFileName) then
+        local content = readfile(AuthFileName)
+        if content == "Authorized" then
+            return true
+        end
+    end
+    return false
+end
+
 local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
-ScreenGui.Name = "PremiumKeySystem"
+ScreenGui.Name = "PremiumKeySystem_PC"
 ScreenGui.ResetOnSpawn = false
 
 local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 380, 0, 280)
-Main.Position = UDim2.new(0.05, 0, 0.3, 0)
+Main.Size = UDim2.new(0, 420, 0, 300)
+Main.Position = UDim2.new(0.5, -210, 0.5, -150)
 Main.BackgroundColor3 = Color3.fromRGB(25, 25, 27)
 Main.BorderSizePixel = 0
 Main.Active = true
@@ -50,22 +56,23 @@ MainCorner.CornerRadius = UDim.new(0, 10)
 
 local MainTitle = Instance.new("TextLabel", Main)
 MainTitle.Size = UDim2.new(1, 0, 0, 40)
-MainTitle.Text = "BT SCRIPT v1.1"
+MainTitle.Text = "BT SCRIPT v1.15"
 MainTitle.TextColor3 = Color3.fromRGB(220, 220, 225)
 MainTitle.TextSize = 14
 MainTitle.Font = Enum.Font.GothamBold
 MainTitle.BackgroundTransparency = 1
 MainTitle.TextXAlignment = Enum.TextXAlignment.Left
-MainTitle.Active = true
 
 local TitlePadding = Instance.new("UIPadding", MainTitle)
 TitlePadding.PaddingLeft = UDim.new(0, 15)
 
 local KeyFrame = Instance.new("Frame", ScreenGui)
+KeyFrame.Name = "KeyFrame"
 KeyFrame.Size = UDim2.new(0, 320, 0, 210)
 KeyFrame.Position = UDim2.new(0.5, -160, 0.5, -105)
 KeyFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 27)
 KeyFrame.BorderSizePixel = 0
+KeyFrame.Visible = false
 
 local KeyCorner = Instance.new("UICorner", KeyFrame)
 KeyCorner.CornerRadius = UDim.new(0, 12)
@@ -142,10 +149,6 @@ MinimizeBtn.ZIndex = 2
 local MinimizeCorner = Instance.new("UICorner", MinimizeBtn)
 MinimizeCorner.CornerRadius = UDim.new(0, 6)
 
-MinimizeBtn.MouseButton1Click:Connect(function()
-    Main.Visible = false
-end)
-
 local ConfirmFrame = Instance.new("Frame", ScreenGui)
 ConfirmFrame.Size = UDim2.new(0, 240, 0, 140)
 ConfirmFrame.Position = UDim2.new(0.5, -120, 0.5, -70)
@@ -196,18 +199,27 @@ CloseBtn.MouseButton1Click:Connect(function()
     ConfirmFrame.Visible = true
 end)
 
-local WalkSpeedValue = 16
+local CF_SpeedEnabled = false
 local FlySpeed = 50
 local FlyEnabled = false
 local AimbotEnabled = false
 local OriginalPosition = nil
+local CurrentTargetModel = nil
+local TargetHighlight = nil
+local isTeleporting = false
+
+local MenuBind = Enum.KeyCode.LeftShift
+local SpeedBind = Enum.KeyCode.T
+local FlyBind = Enum.KeyCode.Z
+local AimBind = Enum.KeyCode.X
+local TpBind = Enum.KeyCode.Q
 
 local TabButtons = {}
 local TabFrames = {}
-local CurrentTab = "MOVEMENT"
+local CurrentTab = "움직임"
 
 local Navigation = Instance.new("Frame", Main)
-Navigation.Size = UDim2.new(0, 110, 1, -40)
+Navigation.Size = UDim2.new(0, 120, 1, -40)
 Navigation.Position = UDim2.new(0, 0, 0, 40)
 Navigation.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
 Navigation.BorderSizePixel = 0
@@ -216,8 +228,8 @@ local NavCorner = Instance.new("UICorner", Navigation)
 NavCorner.CornerRadius = UDim.new(0, 10)
 
 local ContentContainer = Instance.new("Frame", Main)
-ContentContainer.Size = UDim2.new(1, -120, 1, -50)
-ContentContainer.Position = UDim2.new(0, 115, 0, 45)
+ContentContainer.Size = UDim2.new(1, -135, 1, -50)
+ContentContainer.Position = UDim2.new(0, 125, 0, 45)
 ContentContainer.BackgroundTransparency = 1
 
 local function CreateTabFrame(name)
@@ -229,10 +241,22 @@ local function CreateTabFrame(name)
     return frame
 end
 
+local function UpdateTabVisuals(activeName)
+    for tName, tBtn in pairs(TabButtons) do
+        if tName == activeName then
+            tBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+            tBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        else
+            tBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 33)
+            tBtn.TextColor3 = Color3.fromRGB(150, 150, 155)
+        end
+    end
+end
+
 local function CreateTabButton(name, posIndex)
     local btn = Instance.new("TextButton", Navigation)
-    btn.Size = UDim2.new(0.9, 0, 0, 35)
-    btn.Position = UDim2.new(0.05, 0, 0, 10 + (posIndex * 40))
+    btn.Size = UDim2.new(0.9, 0, 0, 32)
+    btn.Position = UDim2.new(0.05, 0, 0, 10 + (posIndex * 36))
     btn.Text = name
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 12
@@ -247,28 +271,22 @@ local function CreateTabButton(name, posIndex)
         for tName, tFrame in pairs(TabFrames) do
             tFrame.Visible = (tName == name)
         end
-        for tName, tBtn in pairs(TabButtons) do
-            if tName == name then
-                tBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-                tBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            else
-                tBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 33)
-                tBtn.TextColor3 = Color3.fromRGB(150, 150, 155)
-            end
-        end
+        UpdateTabVisuals(name)
         CurrentTab = name
     end)
 end
 
-CreateTabButton("MOVEMENT", 0)
-CreateTabButton("FLY", 1)
-CreateTabButton("AIM", 2)
-CreateTabButton("OTHER", 3)
+CreateTabButton("움직임", 0)
+CreateTabButton("날기", 1)
+CreateTabButton("에임", 2)
+CreateTabButton("단축키 설정", 3)
+CreateTabButton("기타", 4)
 
-local MovementFrame = CreateTabFrame("MOVEMENT")
-local FlyFrame = CreateTabFrame("FLY")
-local AimFrame = CreateTabFrame("AIM")
-local OtherFrame = CreateTabFrame("OTHER")
+local MovementFrame = CreateTabFrame("움직임")
+local FlyFrame = CreateTabFrame("날기")
+local AimFrame = CreateTabFrame("에임")
+local BindFrame = CreateTabFrame("단축키 설정")
+local OtherFrame = CreateTabFrame("기타")
 
 local function CreateContentBtn(parent, initialText, pos)
     local btn = Instance.new("TextButton", parent)
@@ -326,29 +344,17 @@ local function UpdateVisual(btn, state, prefix)
     end
 end
 
--- [이동 속도를 실시간으로 강제 주입하는 동적 매커니즘]
-local function ApplySpeed(value)
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-        LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = value
-    end
+local SpeedBtn = CreateContentBtn(MovementFrame, "스피드핵 적용 안됨", UDim2.new(0, 0, 0, 10))
+
+local function ToggleSpeed()
+    if ScreenGui.Parent == nil then return end
+    CF_SpeedEnabled = not CF_SpeedEnabled
+    UpdateVisual(SpeedBtn, CF_SpeedEnabled, "스피드핵")
 end
+SpeedBtn.MouseButton1Click:Connect(ToggleSpeed)
 
--- [MOVEMENT TAB]
-local SpeedLabel = CreateContentLabel(MovementFrame, "이동 속도 조절", UDim2.new(0, 0, 0, 10))
-local SpeedInput = CreateContentBox(MovementFrame, "속도 수치 입력...", "현재 속도: 16", UDim2.new(0, 0, 0, 40))
-SpeedInput.FocusLost:Connect(function(enterPressed)
-    local rawText = SpeedInput.Text:gsub("현재 속도:%s*", "")
-    local num = tonumber(rawText)
-    if num then
-        WalkSpeedValue = num
-    end
-    SpeedInput.Text = "현재 속도: " .. tostring(WalkSpeedValue)
-    ApplySpeed(WalkSpeedValue) -- 입력 즉시 강제 적용
-end)
-
--- [FLY TAB]
 local FlyBtn = CreateContentBtn(FlyFrame, "FLY 적용 안됨", UDim2.new(0, 0, 0, 10))
-local FlySpeedInput = CreateContentBox(FlyFrame, "원하는 플라이 속도 입력...", "플라이 속도: 50", UDim2.new(0, 0, 0, 62))
+local FlySpeedInput = CreateContentBox(FlyFrame, "원하는 플라이 속도 입력...", "플라이 속도 50", UDim2.new(0, 0, 0, 62))
 
 local function ToggleFly()
     if ScreenGui.Parent == nil then return end
@@ -358,69 +364,104 @@ end
 FlyBtn.MouseButton1Click:Connect(ToggleFly)
 
 FlySpeedInput.FocusLost:Connect(function(enterPressed)
-    local rawText = FlySpeedInput.Text:gsub("플라이 속도:%s*", "")
+    local rawText = FlySpeedInput.Text:gsub("플라이 속도%s*", "")
     local num = tonumber(rawText)
-    if num then
-        FlySpeed = num
-    end
-    FlySpeedInput.Text = "플라이 속도: " .. tostring(FlySpeed)
+    if num then FlySpeed = num end
+    FlySpeedInput.Text = "플라이 속도 " .. tostring(FlySpeed)
 end)
 
--- [AIM TAB]
+local function RemoveTargetHighlight()
+    if TargetHighlight then
+        TargetHighlight:Destroy()
+        TargetHighlight = nil
+    end
+    CurrentTargetModel = nil
+end
+
 local AimBtn = CreateContentBtn(AimFrame, "에임봇 적용 안됨", UDim2.new(0, 0, 0, 10))
 local function ToggleAim()
     if ScreenGui.Parent == nil then return end
     AimbotEnabled = not AimbotEnabled
     UpdateVisual(AimBtn, AimbotEnabled, "에임봇")
+    if not AimbotEnabled then
+        RemoveTargetHighlight()
+    end
 end
 AimBtn.MouseButton1Click:Connect(ToggleAim)
 
--- [OTHER TAB]
-local TpBtn = CreateContentBtn(OtherFrame, "Q키를 꾹 눌러 상대 뒤로 순간이동", UDim2.new(0, 0, 0, 10))
-
-TabButtons["MOVEMENT"].BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-TabButtons["MOVEMENT"].TextColor3 = Color3.fromRGB(255, 255, 255)
-TabFrames["MOVEMENT"].Visible = true
-
-YesBtn.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-    AimbotEnabled = false
-    FlyEnabled = false
-    OriginalPosition = nil
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-        LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = 16
+local DynamicTpBindLabel
+local function UpdateTpBindText(keyName)
+    if DynamicTpBindLabel then
+        DynamicTpBindLabel.Text = "[" .. keyName .. "] 키를 꾹 누르면 적 뒤로 이동합니다"
     end
+end
+
+local function CreateBindRow(parent, labelText, defaultBind, pos, callback)
+    local container = Instance.new("Frame", parent)
+    container.Size = UDim2.new(1, 0, 0, 32)
+    container.Position = pos
+    container.BackgroundTransparency = 1
+    
+    local lbl = Instance.new("TextLabel", container)
+    lbl.Size = UDim2.new(0.5, 0, 1, 0)
+    lbl.Text = labelText
+    lbl.TextColor3 = Color3.fromRGB(220, 220, 225)
+    lbl.TextSize = 12
+    lbl.Font = Enum.Font.GothamBold
+    lbl.BackgroundTransparency = 1
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local btn = Instance.new("TextButton", container)
+    btn.Size = UDim2.new(0.45, 0, 0.9, 0)
+    btn.Position = UDim2.new(0.55, 0, 0.05, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 38)
+    btn.TextColor3 = Color3.fromRGB(0, 120, 255)
+    btn.Text = defaultBind.Name
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 12
+    btn.BorderSizePixel = 0
+    
+    local c = Instance.new("UICorner", btn)
+    c.CornerRadius = UDim.new(0, 6)
+    
+    local listening = false
+    btn.MouseButton1Click:Connect(function()
+        if listening then return end
+        listening = true
+        btn.Text = "[ 입력 대기 중 ]"
+        btn.TextColor3 = Color3.fromRGB(255, 150, 0)
+        
+        local conn
+        conn = UserInputService.InputBegan:Connect(function(input, gpe)
+            if gpe then return end
+            if input.UserInputType == Enum.UserInputType.Keyboard then
+                conn:Disconnect()
+                listening = false
+                btn.Text = input.KeyCode.Name
+                btn.TextColor3 = Color3.fromRGB(0, 120, 255)
+                callback(input.KeyCode)
+            end
+        end)
+    end)
+end
+
+CreateBindRow(BindFrame, "메뉴 열기/닫기", MenuBind, UDim2.new(0, 0, 0, 5), function(newKey) MenuBind = newKey end)
+CreateBindRow(BindFrame, "스피드핵 토글", SpeedBind, UDim2.new(0, 0, 0, 40), function(newKey) SpeedBind = newKey end)
+CreateBindRow(BindFrame, "플라이 토글", FlyBind, UDim2.new(0, 0, 0, 75), function(newKey) FlyBind = newKey end)
+CreateBindRow(BindFrame, "에임봇 토글", AimBind, UDim2.new(0, 0, 0, 110), function(newKey) AimBind = newKey end)
+CreateBindRow(BindFrame, "등 뒤 텔레포트", TpBind, UDim2.new(0, 0, 0, 145), function(newKey) 
+    TpBind = newKey 
+    UpdateTpBindText(newKey.Name)
 end)
 
-NoBtn.MouseButton1Click:Connect(function()
-    ConfirmFrame.Visible = false
-    Main.Visible = true
-end)
-
-SubmitBtn.MouseButton1Click:Connect(function()
-    local input = KeyInput.Text:gsub("[%c%s]", "")
-    
-    StatusMsg.Text = "인증 확인 중..."
-    StatusMsg.TextColor3 = Color3.fromRGB(200, 200, 200)
-    task.wait(0.2)
-    
-    pcall(RefreshKeys)
-    
-    if table.find(ValidKeys, input) then
-        SaveAuth()
-        KeyFrame.Visible = false
-        Main.Visible = true
-        StatusMsg.Text = ""
-    else
-        StatusMsg.Text = "올바르지 않은 키입니다. 다시 확인해 주세요."
-        StatusMsg.TextColor3 = Color3.fromRGB(255, 100, 100)
-    end
-end)
+DynamicTpBindLabel = CreateContentLabel(OtherFrame, "[Q] 키를 꾹 누르면 적 뒤로 이동합니다", UDim2.new(0, 0, 0, 10))
+DynamicTpBindLabel.TextColor3 = Color3.fromRGB(230, 230, 235)
+UpdateTpBindText(TpBind.Name)
 
 local function GetTarget()
     local t, d = nil, math.huge
     for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
             local mag = (p.Character.Head.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
             if mag < d then t = p.Character.Head d = mag end
         end
@@ -428,82 +469,183 @@ local function GetTarget()
     return t
 end
 
+local function ApplyTargetESP(targetPart)
+    if not targetPart then 
+        RemoveTargetHighlight()
+        return 
+    end
+    
+    local characterModel = targetPart.Parent
+    if CurrentTargetModel ~= characterModel then
+        RemoveTargetHighlight()
+        
+        CurrentTargetModel = characterModel
+        TargetHighlight = Instance.new("Highlight")
+        TargetHighlight.Name = "Aimbot_AutoESP"
+        TargetHighlight.FillColor = Color3.fromRGB(0, 255, 100)
+        TargetHighlight.FillTransparency = 0.5
+        TargetHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        TargetHighlight.OutlineTransparency = 0
+        TargetHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        TargetHighlight.Parent = characterModel
+    end
+end
+
+local function ResetTeleport()
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local hrp = LocalPlayer.Character.HumanoidRootPart
+        if OriginalPosition then
+            hrp.Velocity = Vector3.new(0, 0, 0)
+            hrp.CFrame = OriginalPosition
+            OriginalPosition = nil
+        end
+    end
+    isTeleporting = false
+end
+
+local function DoTeleport()
+    if isTeleporting then return end
+    
+    local target = GetTarget()
+    if target and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local hrp = LocalPlayer.Character.HumanoidRootPart
+        OriginalPosition = hrp.CFrame
+        isTeleporting = true
+    end
+end
+
+MinimizeBtn.MouseButton1Click:Connect(function()
+    Main.Visible = false
+end)
+
+YesBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+    AimbotEnabled = false
+    FlyEnabled = false
+    CF_SpeedEnabled = false
+    OriginalPosition = nil
+    RemoveTargetHighlight()
+    isTeleporting = false
+end)
+
+NoBtn.MouseButton1Click:Connect(function()
+    ConfirmFrame.Visible = false
+    Main.Visible = true
+end)
+
+local function OpenMainUI()
+    UpdateTabVisuals("움직임")
+    for tName, tFrame in pairs(TabFrames) do
+        tFrame.Visible = (tName == "움직임")
+    end
+    Main.Visible = true
+end
+
+SubmitBtn.MouseButton1Click:Connect(function()
+    local input = KeyInput.Text:gsub("[%c%s]", "")
+    StatusMsg.Text = "인증 확인 중..."
+    StatusMsg.TextColor3 = Color3.fromRGB(200, 200, 200)
+    task.wait(0.2)
+    pcall(RefreshKeys)
+    if table.find(ValidKeys, input) then
+        SaveAuth()
+        KeyFrame.Visible = false
+        OpenMainUI()
+        StatusMsg.Text = ""
+    else
+        StatusMsg.Text = "올바르지 않은 키입니다. 다시 확인해 주세요."
+        StatusMsg.TextColor3 = Color3.fromRGB(255, 100, 100)
+    end
+end)
+
 UserInputService.InputBegan:Connect(function(input, gpe)
-    if ScreenGui.Parent == nil then return end
-    
-    if input.KeyCode == Enum.KeyCode.LeftShift then 
-        if KeyFrame.Visible == false then
-            Main.Visible = not Main.Visible 
-        end
-    end
-    
     if gpe then return end
-    
-    if input.KeyCode == Enum.KeyCode.Z then
-        ToggleFly()
-    elseif input.KeyCode == Enum.KeyCode.X then
-        ToggleAim()
-    elseif input.KeyCode == Enum.KeyCode.Q then
-        local target = GetTarget()
-        if target and LocalPlayer.Character then
-            OriginalPosition = LocalPlayer.Character.HumanoidRootPart.CFrame
-            LocalPlayer.Character.HumanoidRootPart.CFrame = target.CFrame * CFrame.new(0, 0, 1.2) * CFrame.Angles(0, math.pi, 0)
+    if input.UserInputType == Enum.UserInputType.Keyboard then
+        if input.KeyCode == MenuBind then
+            if KeyFrame.Visible == false and ConfirmFrame.Visible == false then
+                Main.Visible = not Main.Visible
+            end
+        elseif input.KeyCode == SpeedBind then
+            ToggleSpeed()
+        elseif input.KeyCode == FlyBind then
+            ToggleFly()
+        elseif input.KeyCode == AimBind then
+            ToggleAim()
+        elseif input.KeyCode == TpBind then
+            DoTeleport()
         end
     end
 end)
 
-UserInputService.InputEnded:Connect(function(input)
-    if ScreenGui.Parent == nil then return end
-    if input.KeyCode == Enum.KeyCode.Q and OriginalPosition then
-        LocalPlayer.Character.HumanoidRootPart.CFrame = OriginalPosition
-        OriginalPosition = nil
-    end
-end)
-
--- [백업 루틴] 리스폰되거나 상태가 꼬여서 속도가 풀려도 계속 유지되도록 체킹
-RunService.Heartbeat:Connect(function()
-    if ScreenGui.Parent == nil then return end
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-        local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-        if hum.WalkSpeed ~= WalkSpeedValue then
-            hum.WalkSpeed = WalkSpeedValue
-        end
-    end
-end)
-
--- 캐릭터가 완전 새로 리스폰 되었을 때도 지정 속도 추적해서 유지
-LocalPlayer.CharacterAdded:Connect(function(char)
-    local hum = char:WaitForChild("Humanoid", 5)
-    if hum then
-        task.wait(0.1)
-        hum.WalkSpeed = WalkSpeedValue
+UserInputService.InputEnded:Connect(function(input, gpe)
+    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == TpBind then
+        ResetTeleport()
     end
 end)
 
 RunService.RenderStepped:Connect(function(dt)
     if ScreenGui.Parent == nil then return end
     
-    if FlyEnabled and LocalPlayer.Character then
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         local hrp = LocalPlayer.Character.HumanoidRootPart
-        hrp.Velocity = Vector3.new(0,0,0)
-        local m = Vector3.new(0,0,0)
-        if UserInputService:IsKeyDown(Enum.KeyCode.W) then m = m + Camera.CFrame.LookVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.S) then m = m - Camera.CFrame.LookVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.A) then m = m - Camera.CFrame.RightVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.D) then m = m + Camera.CFrame.RightVector end
-        hrp.CFrame = hrp.CFrame + (m * FlySpeed * dt)
+        local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        
+        if isTeleporting then
+            if not UserInputService:IsKeyDown(TpBind) then
+                ResetTeleport()
+            else
+                local target = GetTarget()
+                if target then
+                    hrp.Velocity = Vector3.new(0,0,0)
+                    hrp.CFrame = target.CFrame * CFrame.new(0, 0, 1.2) * CFrame.Angles(0, math.pi, 0)
+                end
+            end
+        end
+        
+        if CF_SpeedEnabled and not FlyEnabled and not isTeleporting and hum and hum.MoveDirection.Magnitude > 0 then
+            local moveDir = hum.MoveDirection
+            local calculatedMove = moveDir * 4.5 * dt * 60
+            
+            local raycastParams = RaycastParams.new()
+            raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+            raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
+            
+            local origin = hrp.Position
+            local raycastResult = workspace:Raycast(origin, moveDir * 1.8, raycastParams)
+            
+            if not raycastResult then
+                hrp.CFrame = hrp.CFrame + calculatedMove
+            end
+        end
+        
+        if FlyEnabled then
+            hrp.Velocity = Vector3.new(0,0,0)
+            local m = Vector3.new(0,0,0)
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then m = m + Camera.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then m = m - Camera.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then m = m - Camera.CFrame.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then m = m + Camera.CFrame.RightVector end
+            hrp.CFrame = hrp.CFrame + (m * FlySpeed * dt)
+        end
     end
     
     if AimbotEnabled then
         local target = GetTarget()
-        if target then Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position) end
+        if target then 
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position)
+            ApplyTargetESP(target)
+        else
+            RemoveTargetHighlight()
+        end
+    else
+        RemoveTargetHighlight()
     end
 end)
 
 local dragging, dragStart, startPos
 MainTitle.InputBegan:Connect(function(input)
     if ScreenGui.Parent == nil then return end
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
         startPos = Main.Position
@@ -520,8 +662,16 @@ end)
 
 MainTitle.InputChanged:Connect(function(input)
     if ScreenGui.Parent == nil then return end
-    if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
+    if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and dragging then
         local delta = input.Position - dragStart
         Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+task.spawn(function()
+    if CheckAuth() then
+        OpenMainUI()
+    else
+        KeyFrame.Visible = true
     end
 end)
