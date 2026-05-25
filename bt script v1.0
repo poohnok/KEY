@@ -299,6 +299,11 @@ TpBtn.TextColor3 = Color3.fromRGB(180, 180, 185)
 
 UserInputService.InputBegan:Connect(function(input, gpe)
     if ScreenGui.Parent == nil then return end
+    
+    if input.KeyCode == Enum.KeyCode.LeftShift then 
+        Main.Visible = not Main.Visible 
+    end
+    
     if gpe then return end
     
     if input.KeyCode == Enum.KeyCode.Z then
