@@ -1,0 +1,376 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+ScreenGui.Name = "BTMobileMenuSystem"
+ScreenGui.ResetOnSpawn = false
+
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0, 280, 0, 260)
+Main.Position = UDim2.new(0.1, 0, 0.2, 0)
+Main.BackgroundColor3 = Color3.fromRGB(25, 25, 27)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Visible = true
+
+local MainCorner = Instance.new("UICorner", Main)
+MainCorner.CornerRadius = UDim.new(0, 12)
+
+local MainTitle = Instance.new("TextLabel", Main)
+MainTitle.Size = UDim2.new(1, 0, 0, 45)
+MainTitle.Text = "BT MOBILE v1.0"
+MainTitle.TextColor3 = Color3.fromRGB(220, 220, 225)
+MainTitle.TextSize = 16
+MainTitle.Font = Enum.Font.GothamBold
+MainTitle.BackgroundTransparency = 1
+MainTitle.TextXAlignment = Enum.TextXAlignment.Left
+MainTitle.Active = true
+
+local TitlePadding = Instance.new("UIPadding", MainTitle)
+TitlePadding.PaddingLeft = UDim.new(0, 15)
+
+local MiniIcon = Instance.new("TextButton", ScreenGui)
+MiniIcon.Size = UDim2.new(0, 50, 0, 50)
+MiniIcon.Position = UDim2.new(0.05, 0, 0.2, 0)
+MiniIcon.BackgroundColor3 = Color3.fromRGB(25, 25, 27)
+MiniIcon.BorderSizePixel = 0
+MiniIcon.Text = "BT"
+MiniIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+MiniIcon.TextSize = 16
+MiniIcon.Font = Enum.Font.GothamBold
+MiniIcon.Visible = false
+MiniIcon.Active = true
+
+local MiniCorner = Instance.new("UICorner", MiniIcon)
+MiniCorner.CornerRadius = UDim.new(0, 25)
+
+local TpTouchBtn = Instance.new("TextButton", ScreenGui)
+TpTouchBtn.Size = UDim2.new(0, 55, 0, 55)
+TpTouchBtn.Position = UDim2.new(0.75, 0, 0.6, 0)
+TpTouchBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+TpTouchBtn.BorderSizePixel = 0
+TpTouchBtn.Text = "텔포"
+TpTouchBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+TpTouchBtn.TextSize = 15
+TpTouchBtn.Font = Enum.Font.GothamBold
+TpTouchBtn.Visible = false
+TpTouchBtn.Active = true
+
+local TpTouchCorner = Instance.new("UICorner", TpTouchBtn)
+TpTouchCorner.CornerRadius = UDim.new(0, 27.5)
+
+local CloseBtn = Instance.new("TextButton", Main)
+CloseBtn.Size = UDim2.new(0, 28, 0, 28)
+CloseBtn.Position = UDim2.new(1, -38, 0, 8)
+CloseBtn.Text = "×"
+CloseBtn.TextSize = 20
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 48)
+CloseBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+CloseBtn.BorderSizePixel = 0
+CloseBtn.ZIndex = 2
+
+local CloseCorner = Instance.new("UICorner", CloseBtn)
+CloseCorner.CornerRadius = UDim.new(0, 6)
+
+local MinimizeBtn = Instance.new("TextButton", Main)
+MinimizeBtn.Size = UDim2.new(0, 28, 0, 28)
+MinimizeBtn.Position = UDim2.new(1, -72, 0, 8)
+MinimizeBtn.Text = "-"
+MinimizeBtn.TextSize = 20
+MinimizeBtn.Font = Enum.Font.GothamBold
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 48)
+MinimizeBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+MinimizeBtn.BorderSizePixel = 0
+MinimizeBtn.ZIndex = 2
+
+local MinimizeCorner = Instance.new("UICorner", MinimizeBtn)
+MinimizeCorner.CornerRadius = UDim.new(0, 6)
+
+MinimizeBtn.MouseButton1Click:Connect(function()
+    MiniIcon.Position = UDim2.new(Main.Position.X.Scale, Main.Position.X.Offset - 25, Main.Position.Y.Scale, Main.Position.Y.Offset + 10)
+    Main.Visible = false
+    MiniIcon.Visible = true
+end)
+
+MiniIcon.MouseButton1Click:Connect(function()
+    MiniIcon.Visible = false
+    Main.Visible = true
+end)
+
+local ConfirmFrame = Instance.new("Frame", ScreenGui)
+ConfirmFrame.Size = UDim2.new(0, 240, 0, 140)
+ConfirmFrame.Position = UDim2.new(0.5, -120, 0.5, -70)
+ConfirmFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 33)
+ConfirmFrame.BorderSizePixel = 0
+ConfirmFrame.Active = true
+ConfirmFrame.Visible = false
+
+local ConfirmCorner = Instance.new("UICorner", ConfirmFrame)
+ConfirmCorner.CornerRadius = UDim.new(0, 10)
+
+local ConfirmTitle = Instance.new("TextLabel", ConfirmFrame)
+ConfirmTitle.Size = UDim2.new(1, 0, 0, 60)
+ConfirmTitle.Text = "정말로 닫으시겠습니까?"
+ConfirmTitle.TextColor3 = Color3.fromRGB(230, 230, 235)
+ConfirmTitle.TextSize = 16
+ConfirmTitle.Font = Enum.Font.GothamBold
+ConfirmTitle.BackgroundTransparency = 1
+
+local YesBtn = Instance.new("TextButton", ConfirmFrame)
+YesBtn.Size = UDim2.new(0, 100, 0, 40)
+YesBtn.Position = UDim2.new(0.5, -110, 0.6, 0)
+YesBtn.Text = "예"
+YesBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+YesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+YesBtn.TextSize = 14
+YesBtn.Font = Enum.Font.GothamBold
+YesBtn.BorderSizePixel = 0
+
+local YesCorner = Instance.new("UICorner", YesBtn)
+YesCorner.CornerRadius = UDim.new(0, 6)
+
+local NoBtn = Instance.new("TextButton", ConfirmFrame)
+NoBtn.Size = UDim2.new(0, 100, 0, 40)
+NoBtn.Position = UDim2.new(0.5, 10, 0.6, 0)
+NoBtn.Text = "아니요"
+NoBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+NoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+NoBtn.TextSize = 14
+NoBtn.Font = Enum.Font.GothamBold
+NoBtn.BorderSizePixel = 0
+
+local NoCorner = Instance.new("UICorner", NoBtn)
+NoCorner.CornerRadius = UDim.new(0, 6)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    Main.Visible = false
+    ConfirmFrame.Visible = true
+end)
+
+local FlySpeed = 50
+local FlyEnabled = false
+local AimbotEnabled = false
+local TpIconEnabled = false
+local OriginalPosition = nil
+
+local FlyBtn
+local AimBtn
+local TpToggleBtn
+
+local function UpdateVisual(btn, state, prefix)
+    if state then
+        btn.Text = prefix .. " 적용 됨"
+        btn.BackgroundColor3 = Color3.fromRGB(46, 125, 50)
+    else
+        btn.Text = prefix .. " 적용 안됨"
+        btn.BackgroundColor3 = Color3.fromRGB(38, 38, 41)
+    end
+end
+
+YesBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+    AimbotEnabled = false
+    FlyEnabled = false
+    TpIconEnabled = false
+    OriginalPosition = nil
+end)
+
+NoBtn.MouseButton1Click:Connect(function()
+    ConfirmFrame.Visible = false
+    Main.Visible = true
+end)
+
+local function GetTarget()
+    local t, d = nil, math.huge
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
+            local mag = (p.Character.Head.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+            if mag < d then t = p.Character.Head d = mag end
+        end
+    end
+    return t
+end
+
+local function CreateBtn(pos)
+    local btn = Instance.new("TextButton", Main)
+    btn.Size = UDim2.new(0.88, 0, 0, 44)
+    btn.Position = pos
+    btn.BackgroundColor3 = Color3.fromRGB(38, 38, 41)
+    btn.TextColor3 = Color3.fromRGB(240, 240, 245)
+    btn.TextSize = 14
+    btn.Font = Enum.Font.GothamBold
+    btn.BorderSizePixel = 0
+    
+    local c = Instance.new("UICorner", btn)
+    c.CornerRadius = UDim.new(0, 8)
+    
+    return btn
+end
+
+FlyBtn = CreateBtn(UDim2.new(0.06, 0, 0.22, 0))
+local function ToggleFly()
+    if ScreenGui.Parent == nil then return end
+    FlyEnabled = not FlyEnabled
+    UpdateVisual(FlyBtn, FlyEnabled, "FLY:")
+end
+FlyBtn.MouseButton1Click:Connect(ToggleFly)
+UpdateVisual(FlyBtn, FlyEnabled, "FLY:")
+
+AimBtn = CreateBtn(UDim2.new(0.06, 0, 0.45, 0))
+local function ToggleAim()
+    if ScreenGui.Parent == nil then return end
+    AimbotEnabled = not AimbotEnabled
+    UpdateVisual(AimBtn, AimbotEnabled, "AIMBOT:")
+end
+AimBtn.MouseButton1Click:Connect(ToggleAim)
+UpdateVisual(AimBtn, AimbotEnabled, "AIMBOT:")
+
+TpToggleBtn = CreateBtn(UDim2.new(0.06, 0, 0.68, 0))
+local function ToggleTpIcon()
+    if ScreenGui.Parent == nil then return end
+    TpIconEnabled = not TpIconEnabled
+    UpdateVisual(TpToggleBtn, TpIconEnabled, "TELEPORT ICON:")
+    TpTouchBtn.Visible = TpIconEnabled
+    
+    if not TpIconEnabled and OriginalPosition and LocalPlayer.Character then
+        LocalPlayer.Character.HumanoidRootPart.CFrame = OriginalPosition
+        OriginalPosition = nil
+    end
+end
+TpToggleBtn.MouseButton1Click:Connect(ToggleTpIcon)
+UpdateVisual(TpToggleBtn, TpIconEnabled, "TELEPORT ICON:")
+
+local isTeleporting = false
+
+TpTouchBtn.InputBegan:Connect(function(input)
+    if ScreenGui.Parent == nil or not TpIconEnabled then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        local target = GetTarget()
+        if target and LocalPlayer.Character and not isTeleporting then
+            isTeleporting = true
+            OriginalPosition = LocalPlayer.Character.HumanoidRootPart.CFrame
+            LocalPlayer.Character.HumanoidRootPart.CFrame = target.CFrame * CFrame.new(0, 0, 1.2) * CFrame.Angles(0, math.pi, 0)
+        end
+    end
+end)
+
+TpTouchBtn.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        if isTeleporting then
+            isTeleporting = false
+            if OriginalPosition and LocalPlayer.Character then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = OriginalPosition
+            end
+            OriginalPosition = nil
+        end
+    end
+end)
+
+local dragging, dragStart, startPos
+MainTitle.InputBegan:Connect(function(input)
+    if ScreenGui.Parent == nil then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = Main.Position
+        
+        local connection
+        connection = input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+                connection:Disconnect()
+            end
+        end)
+    end
+end)
+
+MainTitle.InputChanged:Connect(function(input)
+    if ScreenGui.Parent == nil then return end
+    if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and dragging then
+        local delta = input.Position - dragStart
+        Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+local dragMini, miniStart, miniStartPos
+MiniIcon.InputBegan:Connect(function(input)
+    if ScreenGui.Parent == nil then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragMini = true
+        miniStart = input.Position
+        miniStartPos = MiniIcon.Position
+        
+        local connection
+        connection = input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragMini = false
+                connection:Disconnect()
+            end
+        end)
+    end
+end)
+
+MiniIcon.InputChanged:Connect(function(input)
+    if ScreenGui.Parent == nil then return end
+    if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and dragMini then
+        local delta = input.Position - miniStart
+        MiniIcon.Position = UDim2.new(miniStartPos.X.Scale, miniStartPos.X.Offset + delta.X, miniStartPos.Y.Scale, miniStartPos.Y.Offset + delta.Y)
+    end
+end)
+
+local dragTp, tpStart, tpStartPos
+TpTouchBtn.InputBegan:Connect(function(input)
+    if ScreenGui.Parent == nil or not TpIconEnabled then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        tpStart = input.Position
+        tpStartPos = TpTouchBtn.Position
+        dragTp = true
+        
+        local connection
+        connection = input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragTp = false
+                connection:Disconnect()
+            end
+        end)
+    end
+end)
+
+TpTouchBtn.InputChanged:Connect(function(input)
+    if ScreenGui.Parent == nil or not TpIconEnabled then return end
+    if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and dragTp then
+        local delta = input.Position - tpStart
+        if delta.Magnitude > 7 then 
+            TpTouchBtn.Position = UDim2.new(tpStartPos.X.Scale, tpStartPos.X.Offset + delta.X, tpStartPos.Y.Scale, tpStartPos.Y.Offset + delta.Y)
+        end
+    end
+end)
+
+RunService.RenderStepped:Connect(function(dt)
+    if ScreenGui.Parent == nil then return end
+    if FlyEnabled and LocalPlayer.Character then
+        local hrp = LocalPlayer.Character.HumanoidRootPart
+        hrp.Velocity = Vector3.new(0,0,0)
+        local m = Vector3.new(0,0,0)
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then m = m + Camera.CFrame.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then m = m - Camera.CFrame.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then m = m - Camera.CFrame.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then m = m + Camera.CFrame.RightVector end
+        hrp.CFrame = hrp.CFrame + (m * FlySpeed * dt)
+    end
+    if AimbotEnabled then
+        local target = GetTarget()
+        if target then Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position) end
+    end
+    if isTeleporting and OriginalPosition then
+        local target = GetTarget()
+        if target and LocalPlayer.Character then
+            LocalPlayer.Character.HumanoidRootPart.Velocity = Vector3.new(0,0,0)
+            LocalPlayer.Character.HumanoidRootPart.CFrame = target.CFrame * CFrame.new(0, 0, 1.2) * CFrame.Angles(0, math.pi, 0)
+        end
+    end
+end)
