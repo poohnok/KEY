@@ -1,0 +1,527 @@
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local KeyDatabaseURL = "https://raw.githack.com/poohnok/KEY/main/key.txt"
+local ValidKeys = {"frank@13579", "qwer123", "asdf456"}
+local AuthFileName = "ScriptKey_Auth.txt"
+
+if isfile and isfile(AuthFileName) then
+    pcall(function() delfile(AuthFileName) end)
+end
+
+local function RefreshKeys()
+    local cacheBuster = KeyDatabaseURL .. "?t=" .. tostring(os.time())
+    local success, result = pcall(function()
+        return HttpService:GetAsync(cacheBuster)
+    end)
+    if success and result then
+        for key in result:gmatch("[^\r\n]+") do
+            local cleanedKey = key:match("^%s*(.-)%s*$")
+            cleanedKey = cleanedKey:gsub("[%c%s]", "")
+            if cleanedKey ~= "" and not table.find(ValidKeys, cleanedKey) then
+                table.insert(ValidKeys, cleanedKey)
+            end
+        end
+    end
+end
+
+local function SaveAuth()
+    if writefile then pcall(function() writefile(AuthFileName, "Authorized") end) end
+end
+
+local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+ScreenGui.Name = "PremiumKeySystem"
+ScreenGui.ResetOnSpawn = false
+
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0, 380, 0, 280)
+Main.Position = UDim2.new(0.05, 0, 0.3, 0)
+Main.BackgroundColor3 = Color3.fromRGB(25, 25, 27)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Visible = false
+
+local MainCorner = Instance.new("UICorner", Main)
+MainCorner.CornerRadius = UDim.new(0, 10)
+
+local MainTitle = Instance.new("TextLabel", Main)
+MainTitle.Size = UDim2.new(1, 0, 0, 40)
+MainTitle.Text = "BT SCRIPT v1.1"
+MainTitle.TextColor3 = Color3.fromRGB(220, 220, 225)
+MainTitle.TextSize = 14
+MainTitle.Font = Enum.Font.GothamBold
+MainTitle.BackgroundTransparency = 1
+MainTitle.TextXAlignment = Enum.TextXAlignment.Left
+MainTitle.Active = true
+
+local TitlePadding = Instance.new("UIPadding", MainTitle)
+TitlePadding.PaddingLeft = UDim.new(0, 15)
+
+local KeyFrame = Instance.new("Frame", ScreenGui)
+KeyFrame.Size = UDim2.new(0, 320, 0, 210)
+KeyFrame.Position = UDim2.new(0.5, -160, 0.5, -105)
+KeyFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 27)
+KeyFrame.BorderSizePixel = 0
+
+local KeyCorner = Instance.new("UICorner", KeyFrame)
+KeyCorner.CornerRadius = UDim.new(0, 12)
+
+local KeyTitle = Instance.new("TextLabel", KeyFrame)
+KeyTitle.Size = UDim2.new(1, 0, 0, 50)
+KeyTitle.Text = "보안 시스템 인증"
+KeyTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+KeyTitle.TextSize = 18
+KeyTitle.Font = Enum.Font.GothamBold
+KeyTitle.BackgroundTransparency = 1
+
+local KeyInput = Instance.new("TextBox", KeyFrame)
+KeyInput.Size = UDim2.new(0.85, 0, 0, 42)
+KeyInput.Position = UDim2.new(0.075, 0, 0.33, 0)
+KeyInput.PlaceholderText = "여기에 키를 입력하세요..."
+KeyInput.Text = ""
+KeyInput.BackgroundColor3 = Color3.fromRGB(35, 35, 38)
+KeyInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+KeyInput.TextSize = 14
+KeyInput.Font = Enum.Font.Gotham
+KeyInput.BorderSizePixel = 0
+
+local InputCorner = Instance.new("UICorner", KeyInput)
+InputCorner.CornerRadius = UDim.new(0, 6)
+
+local SubmitBtn = Instance.new("TextButton", KeyFrame)
+SubmitBtn.Size = UDim2.new(0.85, 0, 0, 40)
+SubmitBtn.Position = UDim2.new(0.075, 0, 0.62, 0)
+SubmitBtn.Text = "인증하기"
+SubmitBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+SubmitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SubmitBtn.TextSize = 14
+SubmitBtn.Font = Enum.Font.GothamBold
+SubmitBtn.BorderSizePixel = 0
+
+local BtnCorner = Instance.new("UICorner", SubmitBtn)
+BtnCorner.CornerRadius = UDim.new(0, 6)
+
+local StatusMsg = Instance.new("TextLabel", KeyFrame)
+StatusMsg.Size = UDim2.new(1, 0, 0, 20)
+StatusMsg.Position = UDim2.new(0, 0, 0.86, 0)
+StatusMsg.Text = ""
+StatusMsg.TextColor3 = Color3.fromRGB(255, 100, 100)
+StatusMsg.TextSize = 12
+StatusMsg.Font = Enum.Font.Gotham
+StatusMsg.BackgroundTransparency = 1
+
+local CloseBtn = Instance.new("TextButton", Main)
+CloseBtn.Size = UDim2.new(0, 24, 0, 24)
+CloseBtn.Position = UDim2.new(1, -34, 0, 8)
+CloseBtn.Text = "×"
+CloseBtn.TextSize = 18
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 48)
+CloseBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+CloseBtn.BorderSizePixel = 0
+CloseBtn.ZIndex = 2
+
+local CloseCorner = Instance.new("UICorner", CloseBtn)
+CloseCorner.CornerRadius = UDim.new(0, 6)
+
+local MinimizeBtn = Instance.new("TextButton", Main)
+MinimizeBtn.Size = UDim2.new(0, 24, 0, 24)
+MinimizeBtn.Position = UDim2.new(1, -64, 0, 8)
+MinimizeBtn.Text = "-"
+MinimizeBtn.TextSize = 18
+MinimizeBtn.Font = Enum.Font.GothamBold
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 48)
+MinimizeBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+MinimizeBtn.BorderSizePixel = 0
+MinimizeBtn.ZIndex = 2
+
+local MinimizeCorner = Instance.new("UICorner", MinimizeBtn)
+MinimizeCorner.CornerRadius = UDim.new(0, 6)
+
+MinimizeBtn.MouseButton1Click:Connect(function()
+    Main.Visible = false
+end)
+
+local ConfirmFrame = Instance.new("Frame", ScreenGui)
+ConfirmFrame.Size = UDim2.new(0, 240, 0, 140)
+ConfirmFrame.Position = UDim2.new(0.5, -120, 0.5, -70)
+ConfirmFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 33)
+ConfirmFrame.BorderSizePixel = 0
+ConfirmFrame.Active = true
+ConfirmFrame.Visible = false
+
+local ConfirmCorner = Instance.new("UICorner", ConfirmFrame)
+ConfirmCorner.CornerRadius = UDim.new(0, 10)
+
+local ConfirmTitle = Instance.new("TextLabel", ConfirmFrame)
+ConfirmTitle.Size = UDim2.new(1, 0, 0, 60)
+ConfirmTitle.Text = "정말로 닫으시겠습니까?"
+ConfirmTitle.TextColor3 = Color3.fromRGB(230, 230, 235)
+ConfirmTitle.TextSize = 16
+ConfirmTitle.Font = Enum.Font.GothamBold
+ConfirmTitle.BackgroundTransparency = 1
+
+local YesBtn = Instance.new("TextButton", ConfirmFrame)
+YesBtn.Size = UDim2.new(0, 100, 0, 40)
+YesBtn.Position = UDim2.new(0.5, -110, 0.6, 0)
+YesBtn.Text = "예"
+YesBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+YesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+YesBtn.TextSize = 14
+YesBtn.Font = Enum.Font.GothamBold
+YesBtn.BorderSizePixel = 0
+
+local YesCorner = Instance.new("UICorner", YesBtn)
+YesCorner.CornerRadius = UDim.new(0, 6)
+
+local NoBtn = Instance.new("TextButton", ConfirmFrame)
+NoBtn.Size = UDim2.new(0, 100, 0, 40)
+NoBtn.Position = UDim2.new(0.5, 10, 0.6, 0)
+NoBtn.Text = "아니요"
+NoBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+NoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+NoBtn.TextSize = 14
+NoBtn.Font = Enum.Font.GothamBold
+NoBtn.BorderSizePixel = 0
+
+local NoCorner = Instance.new("UICorner", NoBtn)
+NoCorner.CornerRadius = UDim.new(0, 6)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    Main.Visible = false
+    ConfirmFrame.Visible = true
+end)
+
+local WalkSpeedValue = 16
+local FlySpeed = 50
+local FlyEnabled = false
+local AimbotEnabled = false
+local OriginalPosition = nil
+
+local TabButtons = {}
+local TabFrames = {}
+local CurrentTab = "MOVEMENT"
+
+local Navigation = Instance.new("Frame", Main)
+Navigation.Size = UDim2.new(0, 110, 1, -40)
+Navigation.Position = UDim2.new(0, 0, 0, 40)
+Navigation.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
+Navigation.BorderSizePixel = 0
+
+local NavCorner = Instance.new("UICorner", Navigation)
+NavCorner.CornerRadius = UDim.new(0, 10)
+
+local ContentContainer = Instance.new("Frame", Main)
+ContentContainer.Size = UDim2.new(1, -120, 1, -50)
+ContentContainer.Position = UDim2.new(0, 115, 0, 45)
+ContentContainer.BackgroundTransparency = 1
+
+local function CreateTabFrame(name)
+    local frame = Instance.new("Frame", ContentContainer)
+    frame.Size = UDim2.new(1, 0, 1, 0)
+    frame.BackgroundTransparency = 1
+    frame.Visible = false
+    TabFrames[name] = frame
+    return frame
+end
+
+local function CreateTabButton(name, posIndex)
+    local btn = Instance.new("TextButton", Navigation)
+    btn.Size = UDim2.new(0.9, 0, 0, 35)
+    btn.Position = UDim2.new(0.05, 0, 0, 10 + (posIndex * 40))
+    btn.Text = name
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 12
+    btn.BorderSizePixel = 0
+    
+    local c = Instance.new("UICorner", btn)
+    c.CornerRadius = UDim.new(0, 6)
+    
+    TabButtons[name] = btn
+    
+    btn.MouseButton1Click:Connect(function()
+        for tName, tFrame in pairs(TabFrames) do
+            tFrame.Visible = (tName == name)
+        end
+        for tName, tBtn in pairs(TabButtons) do
+            if tName == name then
+                tBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+                tBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            else
+                tBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 33)
+                tBtn.TextColor3 = Color3.fromRGB(150, 150, 155)
+            end
+        end
+        CurrentTab = name
+    end)
+end
+
+CreateTabButton("MOVEMENT", 0)
+CreateTabButton("FLY", 1)
+CreateTabButton("AIM", 2)
+CreateTabButton("OTHER", 3)
+
+local MovementFrame = CreateTabFrame("MOVEMENT")
+local FlyFrame = CreateTabFrame("FLY")
+local AimFrame = CreateTabFrame("AIM")
+local OtherFrame = CreateTabFrame("OTHER")
+
+local function CreateContentBtn(parent, initialText, pos)
+    local btn = Instance.new("TextButton", parent)
+    btn.Size = UDim2.new(1, 0, 0, 42)
+    btn.Position = pos
+    btn.BackgroundColor3 = Color3.fromRGB(38, 38, 41)
+    btn.TextColor3 = Color3.fromRGB(240, 240, 245)
+    btn.TextSize = 13
+    btn.Font = Enum.Font.GothamBold
+    btn.Text = initialText
+    btn.BorderSizePixel = 0
+    
+    local c = Instance.new("UICorner", btn)
+    c.CornerRadius = UDim.new(0, 6)
+    return btn
+end
+
+local function CreateContentBox(parent, placeholder, text, pos)
+    local box = Instance.new("TextBox", parent)
+    box.Size = UDim2.new(1, 0, 0, 42)
+    box.Position = pos
+    box.PlaceholderText = placeholder
+    box.Text = text
+    box.BackgroundColor3 = Color3.fromRGB(35, 35, 38)
+    box.TextColor3 = Color3.fromRGB(255, 255, 255)
+    box.TextSize = 13
+    box.Font = Enum.Font.GothamBold
+    box.BorderSizePixel = 0
+    
+    local c = Instance.new("UICorner", box)
+    c.CornerRadius = UDim.new(0, 6)
+    return box
+end
+
+local function CreateContentLabel(parent, text, pos)
+    local label = Instance.new("TextLabel", parent)
+    label.Size = UDim2.new(1, 0, 0, 25)
+    label.Position = pos
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.fromRGB(180, 180, 185)
+    label.TextSize = 12
+    label.Font = Enum.Font.GothamBold
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Text = text
+    return label
+end
+
+local function UpdateVisual(btn, state, prefix)
+    if state then
+        btn.Text = prefix .. " 적용 됨"
+        btn.BackgroundColor3 = Color3.fromRGB(46, 125, 50)
+    else
+        btn.Text = prefix .. " 적용 안됨"
+        btn.BackgroundColor3 = Color3.fromRGB(38, 38, 41)
+    end
+end
+
+-- [이동 속도를 실시간으로 강제 주입하는 동적 매커니즘]
+local function ApplySpeed(value)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+        LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = value
+    end
+end
+
+-- [MOVEMENT TAB]
+local SpeedLabel = CreateContentLabel(MovementFrame, "이동 속도 조절", UDim2.new(0, 0, 0, 10))
+local SpeedInput = CreateContentBox(MovementFrame, "속도 수치 입력...", "현재 속도: 16", UDim2.new(0, 0, 0, 40))
+SpeedInput.FocusLost:Connect(function(enterPressed)
+    local rawText = SpeedInput.Text:gsub("현재 속도:%s*", "")
+    local num = tonumber(rawText)
+    if num then
+        WalkSpeedValue = num
+    end
+    SpeedInput.Text = "현재 속도: " .. tostring(WalkSpeedValue)
+    ApplySpeed(WalkSpeedValue) -- 입력 즉시 강제 적용
+end)
+
+-- [FLY TAB]
+local FlyBtn = CreateContentBtn(FlyFrame, "FLY 적용 안됨", UDim2.new(0, 0, 0, 10))
+local FlySpeedInput = CreateContentBox(FlyFrame, "원하는 플라이 속도 입력...", "플라이 속도: 50", UDim2.new(0, 0, 0, 62))
+
+local function ToggleFly()
+    if ScreenGui.Parent == nil then return end
+    FlyEnabled = not FlyEnabled
+    UpdateVisual(FlyBtn, FlyEnabled, "FLY")
+end
+FlyBtn.MouseButton1Click:Connect(ToggleFly)
+
+FlySpeedInput.FocusLost:Connect(function(enterPressed)
+    local rawText = FlySpeedInput.Text:gsub("플라이 속도:%s*", "")
+    local num = tonumber(rawText)
+    if num then
+        FlySpeed = num
+    end
+    FlySpeedInput.Text = "플라이 속도: " .. tostring(FlySpeed)
+end)
+
+-- [AIM TAB]
+local AimBtn = CreateContentBtn(AimFrame, "에임봇 적용 안됨", UDim2.new(0, 0, 0, 10))
+local function ToggleAim()
+    if ScreenGui.Parent == nil then return end
+    AimbotEnabled = not AimbotEnabled
+    UpdateVisual(AimBtn, AimbotEnabled, "에임봇")
+end
+AimBtn.MouseButton1Click:Connect(ToggleAim)
+
+-- [OTHER TAB]
+local TpBtn = CreateContentBtn(OtherFrame, "Q키를 꾹 눌러 상대 뒤로 순간이동", UDim2.new(0, 0, 0, 10))
+
+TabButtons["MOVEMENT"].BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+TabButtons["MOVEMENT"].TextColor3 = Color3.fromRGB(255, 255, 255)
+TabFrames["MOVEMENT"].Visible = true
+
+YesBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+    AimbotEnabled = false
+    FlyEnabled = false
+    OriginalPosition = nil
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+        LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = 16
+    end
+end)
+
+NoBtn.MouseButton1Click:Connect(function()
+    ConfirmFrame.Visible = false
+    Main.Visible = true
+end)
+
+SubmitBtn.MouseButton1Click:Connect(function()
+    local input = KeyInput.Text:gsub("[%c%s]", "")
+    
+    StatusMsg.Text = "인증 확인 중..."
+    StatusMsg.TextColor3 = Color3.fromRGB(200, 200, 200)
+    task.wait(0.2)
+    
+    pcall(RefreshKeys)
+    
+    if table.find(ValidKeys, input) then
+        SaveAuth()
+        KeyFrame.Visible = false
+        Main.Visible = true
+        StatusMsg.Text = ""
+    else
+        StatusMsg.Text = "올바르지 않은 키입니다. 다시 확인해 주세요."
+        StatusMsg.TextColor3 = Color3.fromRGB(255, 100, 100)
+    end
+end)
+
+local function GetTarget()
+    local t, d = nil, math.huge
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
+            local mag = (p.Character.Head.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+            if mag < d then t = p.Character.Head d = mag end
+        end
+    end
+    return t
+end
+
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if ScreenGui.Parent == nil then return end
+    
+    if input.KeyCode == Enum.KeyCode.LeftShift then 
+        if KeyFrame.Visible == false then
+            Main.Visible = not Main.Visible 
+        end
+    end
+    
+    if gpe then return end
+    
+    if input.KeyCode == Enum.KeyCode.Z then
+        ToggleFly()
+    elseif input.KeyCode == Enum.KeyCode.X then
+        ToggleAim()
+    elseif input.KeyCode == Enum.KeyCode.Q then
+        local target = GetTarget()
+        if target and LocalPlayer.Character then
+            OriginalPosition = LocalPlayer.Character.HumanoidRootPart.CFrame
+            LocalPlayer.Character.HumanoidRootPart.CFrame = target.CFrame * CFrame.new(0, 0, 1.2) * CFrame.Angles(0, math.pi, 0)
+        end
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if ScreenGui.Parent == nil then return end
+    if input.KeyCode == Enum.KeyCode.Q and OriginalPosition then
+        LocalPlayer.Character.HumanoidRootPart.CFrame = OriginalPosition
+        OriginalPosition = nil
+    end
+end)
+
+-- [백업 루틴] 리스폰되거나 상태가 꼬여서 속도가 풀려도 계속 유지되도록 체킹
+RunService.Heartbeat:Connect(function()
+    if ScreenGui.Parent == nil then return end
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+        local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if hum.WalkSpeed ~= WalkSpeedValue then
+            hum.WalkSpeed = WalkSpeedValue
+        end
+    end
+end)
+
+-- 캐릭터가 완전 새로 리스폰 되었을 때도 지정 속도 추적해서 유지
+LocalPlayer.CharacterAdded:Connect(function(char)
+    local hum = char:WaitForChild("Humanoid", 5)
+    if hum then
+        task.wait(0.1)
+        hum.WalkSpeed = WalkSpeedValue
+    end
+end)
+
+RunService.RenderStepped:Connect(function(dt)
+    if ScreenGui.Parent == nil then return end
+    
+    if FlyEnabled and LocalPlayer.Character then
+        local hrp = LocalPlayer.Character.HumanoidRootPart
+        hrp.Velocity = Vector3.new(0,0,0)
+        local m = Vector3.new(0,0,0)
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then m = m + Camera.CFrame.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then m = m - Camera.CFrame.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then m = m - Camera.CFrame.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then m = m + Camera.CFrame.RightVector end
+        hrp.CFrame = hrp.CFrame + (m * FlySpeed * dt)
+    end
+    
+    if AimbotEnabled then
+        local target = GetTarget()
+        if target then Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position) end
+    end
+end)
+
+local dragging, dragStart, startPos
+MainTitle.InputBegan:Connect(function(input)
+    if ScreenGui.Parent == nil then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = Main.Position
+        
+        local connection
+        connection = input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+                connection:Disconnect()
+            end
+        end)
+    end
+end)
+
+MainTitle.InputChanged:Connect(function(input)
+    if ScreenGui.Parent == nil then return end
+    if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
+        local delta = input.Position - dragStart
+        Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
